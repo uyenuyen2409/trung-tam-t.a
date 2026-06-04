@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Giảng Viên - English Center</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+        <div class="topbar">
+            <h2>👨‍🏫 Quản Lý Giảng Viên</h2>
+            <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
+        </div>
+        <div class="page-content">
+            <div class="card" style="margin-bottom:24px">
+                <div class="card-header">
+                    <h3>📋 Thông Tin Giảng Viên</h3>
+                    <button class="btn btn-outline btn-sm" onclick="resetForm()">🔄 Làm mới</button>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txtMaGiangVien">Mã Giảng Viên</label>
+                            <input type="text" class="form-control-plain" id="txtMaGiangVien" name="txtMaGiangVien" placeholder="VD: GV003">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtHoTen">Họ Tên</label>
+                            <input type="text" class="form-control-plain" id="txtHoTen" name="txtHoTen" placeholder="Nguyễn Văn A">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txtTrinhDo">Trình Độ</label>
+                            <input type="text" class="form-control-plain" id="txtTrinhDo" name="txtTrinhDo" placeholder="Thạc sĩ / IELTS 8.0...">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtSoDienThoai">Số Điện Thoại</label>
+                            <input type="text" class="form-control-plain" id="txtSoDienThoai" name="txtSoDienThoai" placeholder="0901234567">
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:8px">
+                        <button class="btn btn-success" id="btnThem" onclick="themGV()">➕ Thêm Mới</button>
+                        <button class="btn btn-info" id="btnSua" onclick="suaGV()" style="display:none">💾 Cập Nhật</button>
+                        <button class="btn btn-outline" id="btnHuy" onclick="resetForm()" style="display:none">❌ Hủy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>📃 Danh Sách Giảng Viên</h3></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Mã GV</th><th>Họ Tên</th><th>Trình Độ</th><th>SĐT</th><th>Thao Tác</th></tr></thead>
+                        <tbody id="dgvGiangVien">
+                            <tr><td colspan="5"><div class="loading"><div class="spinner"></div> Đang tải...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/app.js"></script>
+<script>
+    checkAuth(); renderSidebar('giangvien'); setUserInfo();
+
+    async function loadData() {
+        const res = await fetch('/api/GiangVien');
+        const data = await res.json();
+        const tbody = document.getElementById('dgvGiangVien');
+        if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có giảng viên</p></div></td></tr>'; return; }
+        tbody.innerHTML = data.map(g => `<tr>
+            <td><span class="badge badge-info">${g.maGiangVien}</span></td>
+            <td><strong>${g.hoTen}</strong></td>
+            <td><span class="badge badge-warning">${g.trinhDo}</span></td>
+            <td>${g.soDienThoai}</td>
+            <td><div class="action-btns">
+                <button class="btn-icon edit" onclick="editGV('${g.maGiangVien}')">✏️</button>
+                <button class="btn-icon delete" onclick="deleteGV('${g.maGiangVien}')">🗑️</button>
+            </div></td>
+        </tr>`).join('');
+    }
+
+    async function themGV() {
+        const d = getFormData();
+        if (!d.maGiangVien || !d.hoTen) { showToast('Nhập đầy đủ thông tin!', 'error'); return; }
+        const res = await fetch('/api/GiangVien', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+        if (res.ok) { showToast('Thêm thành công!', 'success'); resetForm(); loadData(); }
+        else { const r = await res.json(); showToast(r.message, 'error'); }
+    }
+
+    async function editGV(id) {
+        const res = await fetch('/api/GiangVien');
+        const list = await res.json();
+        const g = list.find(x => x.maGiangVien === id);
+        if (!g) return;
+        document.getElementById('txtMaGiangVien').value = g.maGiangVien;
+        document.getElementById('txtMaGiangVien').readOnly = true;
+        document.getElementById('txtHoTen').value = g.hoTen;
+        document.getElementById('txtTrinhDo').value = g.trinhDo;
+        document.getElementById('txtSoDienThoai').value = g.soDienThoai;
+        document.getElementById('btnThem').style.display = 'none';
+        document.getElementById('btnSua').style.display = '';
+        document.getElementById('btnHuy').style.display = '';
+    }
+
+    async function suaGV() {
+        const d = getFormData();
+        const res = await fetch(`/api/GiangVien/${d.maGiangVien}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+        if (res.ok) { showToast('Cập nhật thành công!', 'success'); resetForm(); loadData(); }
+    }
+
+    async function deleteGV(id) {
+        if (!confirm('Xóa giảng viên này?')) return;
+        const res = await fetch(`/api/GiangVien/${id}`, { method:'DELETE' });
+        if (res.ok) { showToast('Xóa thành công!', 'success'); loadData(); }
+    }
+
+    function getFormData() {
+        return {
+            maGiangVien: document.getElementById('txtMaGiangVien').value.trim(),
+            hoTen: document.getElementById('txtHoTen').value.trim(),
+            trinhDo: document.getElementById('txtTrinhDo').value.trim(),
+            soDienThoai: document.getElementById('txtSoDienThoai').value.trim()
+        };
+    }
+
+    function resetForm() {
+        document.getElementById('txtMaGiangVien').value = ''; document.getElementById('txtMaGiangVien').readOnly = false;
+        document.getElementById('txtHoTen').value = '';
+        document.getElementById('txtTrinhDo').value = '';
+        document.getElementById('txtSoDienThoai').value = '';
+        document.getElementById('btnThem').style.display = '';
+        document.getElementById('btnSua').style.display = 'none';
+        document.getElementById('btnHuy').style.display = 'none';
+    }
+
+    loadData();
+</script>
+</body>
+</html>
