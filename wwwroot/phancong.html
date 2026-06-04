@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân Công Giảng Viên - English Center</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+        <div class="topbar">
+            <h2>📋 Phân Công Giảng Viên</h2>
+            <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
+        </div>
+        <div class="page-content">
+            <div class="card" style="margin-bottom:24px">
+                <div class="card-header"><h3>📋 Phân Công Lịch Dạy</h3></div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txtMaPhanCong">Mã Phân Công</label>
+                            <input type="text" class="form-control-plain" id="txtMaPhanCong" name="txtMaPhanCong" placeholder="VD: PC001">
+                        </div>
+                        <div class="form-group">
+                            <label for="cboGiangVien">Giảng Viên</label>
+                            <select class="form-control-plain" id="cboGiangVien" name="cboGiangVien"></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cboLopHoc">Lớp Học</label>
+                            <select class="form-control-plain" id="cboLopHoc" name="cboLopHoc"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cboVaiTro">Vai Trò</label>
+                            <select class="form-control-plain" id="cboVaiTro" name="cboVaiTro">
+                                <option value="Giáo viên chính">Giáo viên chính</option>
+                                <option value="Trợ giảng">Trợ giảng</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" id="btnPhanCong" onclick="phanCong()">📋 Phân Công</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>📃 Danh Sách Phân Công</h3></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Mã PC</th><th>Giảng Viên</th><th>Lớp Học</th><th>Vai Trò</th><th>Thao Tác</th></tr></thead>
+                        <tbody id="dgvPhanCong">
+                            <tr><td colspan="5"><div class="loading"><div class="spinner"></div> Đang tải...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/app.js"></script>
+<script>
+    checkAuth(); renderSidebar('phancong'); setUserInfo();
+
+    async function loadCombos() {
+        const [gvRes, lhRes] = await Promise.all([fetch('/api/GiangVien'), fetch('/api/LopHoc')]);
+        const [gvData, lhData] = await Promise.all([gvRes.json(), lhRes.json()]);
+        document.getElementById('cboGiangVien').innerHTML = '<option value="">-- Chọn GV --</option>' +
+            gvData.map(g => `<option value="${g.maGiangVien}">${g.maGiangVien} - ${g.hoTen}</option>`).join('');
+        document.getElementById('cboLopHoc').innerHTML = '<option value="">-- Chọn Lớp --</option>' +
+            lhData.map(l => `<option value="${l.maLopHoc}">${l.maLopHoc} - ${l.tenLopHoc}</option>`).join('');
+    }
+
+    async function loadData() {
+        const res = await fetch('/api/PhanCongGiangVien');
+        const data = await res.json();
+        const tbody = document.getElementById('dgvPhanCong');
+        if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có phân công</p></div></td></tr>'; return; }
+        tbody.innerHTML = data.map(p => `<tr>
+            <td><span class="badge badge-info">${p.maPhanCong}</span></td>
+            <td><strong>${p.tenGiangVien}</strong> <small style="color:var(--text-muted)">(${p.maGiangVien})</small></td>
+            <td>${p.tenLopHoc} <small style="color:var(--text-muted)">(${p.maLopHoc})</small></td>
+            <td><span class="badge ${p.vaiTro === 'Giáo viên chính' ? 'badge-success' : 'badge-warning'}">${p.vaiTro}</span></td>
+            <td><button class="btn-icon delete" onclick="deletePC('${p.maPhanCong}')">🗑️</button></td>
+        </tr>`).join('');
+    }
+
+    async function phanCong() {
+        const d = {
+            maPhanCong: document.getElementById('txtMaPhanCong').value.trim(),
+            maGiangVien: document.getElementById('cboGiangVien').value,
+            maLopHoc: document.getElementById('cboLopHoc').value,
+            vaiTro: document.getElementById('cboVaiTro').value
+        };
+        if (!d.maPhanCong || !d.maGiangVien || !d.maLopHoc) { showToast('Nhập đầy đủ!', 'error'); return; }
+        const res = await fetch('/api/PhanCongGiangVien', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+        if (res.ok) { showToast('Phân công thành công!', 'success'); document.getElementById('txtMaPhanCong').value = ''; loadData(); }
+        else { const r = await res.json(); showToast(r.message, 'error'); }
+    }
+
+    async function deletePC(id) {
+        if (!confirm('Xóa phân công này?')) return;
+        const res = await fetch(`/api/PhanCongGiangVien/${id}`, { method:'DELETE' });
+        if (res.ok) { showToast('Xóa thành công!', 'success'); loadData(); }
+    }
+
+    loadCombos(); loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống Kê Báo Cáo - English Center</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .report-hero {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            border-radius: var(--radius);
+            padding: 40px;
+            margin-bottom: 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .report-hero::before {
+            content: '';
+            position: absolute;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(240,165,0,0.2), transparent 70%);
+            top: -100px; right: -100px;
+            border-radius: 50%;
+        }
+        .report-hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        .report-hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            position: relative;
+        }
+        .big-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .big-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .big-stat:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        .big-stat .big-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+        .big-stat .big-value {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .big-stat .big-label {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .big-stat.revenue .big-value {
+            background: linear-gradient(135deg, var(--accent-light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .big-stat.students .big-value { color: var(--info); }
+        .big-stat.courses .big-value { color: var(--success); }
+        .big-stat.instructors .big-value { color: #8b5cf6; }
+
+        .chart-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+        .chart-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .bar-chart { display: flex; flex-direction: column; gap: 12px; }
+        .bar-item { display: flex; align-items: center; gap: 12px; }
+        .bar-label { width: 120px; font-size: 0.85rem; color: var(--text-secondary); flex-shrink: 0; }
+        .bar-track { flex: 1; height: 24px; background: var(--bg-input); border-radius: 12px; overflow: hidden; position: relative; }
+        .bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .bar-fill.c1 { background: linear-gradient(90deg, var(--accent), var(--accent-light)); }
+        .bar-fill.c2 { background: linear-gradient(90deg, var(--info), #60a5fa); }
+        .bar-fill.c3 { background: linear-gradient(90deg, var(--success), #34d399); }
+        .bar-fill.c4 { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .bar-fill.c5 { background: linear-gradient(90deg, #ec4899, #f472b6); }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+        <div class="topbar">
+            <h2>📈 Thống Kê & Báo Cáo</h2>
+            <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
+        </div>
+        <div class="page-content">
+            <div class="report-hero">
+                <h1>📊 Báo Cáo Tổng Hợp</h1>
+                <p>Thống kê hoạt động Trung tâm Tiếng Anh English Center</p>
+            </div>
+
+            <div class="big-stats">
+                <div class="big-stat students">
+                    <span class="big-icon">👨‍🎓</span>
+                    <div class="big-value" id="lblTongHV">0</div>
+                    <div class="big-label">Tổng Học Viên Đăng Ký</div>
+                </div>
+                <div class="big-stat revenue">
+                    <span class="big-icon">💰</span>
+                    <div class="big-value" id="lblDoanhThu">0 ₫</div>
+                    <div class="big-label">Tổng Doanh Thu (SUM)</div>
+                </div>
+                <div class="big-stat courses">
+                    <span class="big-icon">📚</span>
+                    <div class="big-value" id="lblTongKH">0</div>
+                    <div class="big-label">Khóa Học Đang Mở</div>
+                </div>
+                <div class="big-stat instructors">
+                    <span class="big-icon">👨‍🏫</span>
+                    <div class="big-value" id="lblTongGV">0</div>
+                    <div class="big-label">Giảng Viên</div>
+                </div>
+            </div>
+
+            <div class="chart-section">
+                <div class="chart-card">
+                    <h3>📊 Tổng Quan Số Liệu</h3>
+                    <div class="bar-chart" id="barChart"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>📋 Chi Tiết Thống Kê</h3>
+                    <table>
+                        <thead><tr><th>Chỉ tiêu</th><th>Giá trị</th></tr></thead>
+                        <tbody id="detailTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="js/app.js"></script>
+<script>
+    checkAuth(); renderSidebar('thongke'); setUserInfo();
+
+    async function loadStats() {
+        const res = await fetch('/api/ThongKe');
+        const d = await res.json();
+
+        document.getElementById('lblTongHV').textContent = d.tongHocVien;
+        document.getElementById('lblDoanhThu').textContent = formatVND(d.tongDoanhThu);
+        document.getElementById('lblTongKH').textContent = d.tongKhoaHoc;
+        document.getElementById('lblTongGV').textContent = d.tongGiangVien;
+
+        // Bar chart
+        const max = Math.max(d.tongHocVien, d.tongKhoaHoc, d.tongLopHoc, d.tongGiangVien, d.tongDangKy, 1);
+        const items = [
+            { label: 'Học Viên', val: d.tongHocVien, cls: 'c1' },
+            { label: 'Khóa Học', val: d.tongKhoaHoc, cls: 'c2' },
+            { label: 'Lớp Học', val: d.tongLopHoc, cls: 'c3' },
+            { label: 'Giảng Viên', val: d.tongGiangVien, cls: 'c4' },
+            { label: 'Lượt Đăng Ký', val: d.tongDangKy, cls: 'c5' }
+        ];
+        document.getElementById('barChart').innerHTML = items.map(i =>
+            `<div class="bar-item">
+                <div class="bar-label">${i.label}</div>
+                <div class="bar-track">
+                    <div class="bar-fill ${i.cls}" style="width:${Math.max((i.val/max)*100, 8)}%">${i.val}</div>
+                </div>
+            </div>`
+        ).join('');
+
+        // Detail table
+        document.getElementById('detailTable').innerHTML = `
+            <tr><td>👨‍🎓 Tổng Học Viên</td><td><strong>${d.tongHocVien}</strong></td></tr>
+            <tr><td>📚 Tổng Khóa Học</td><td><strong>${d.tongKhoaHoc}</strong></td></tr>
+            <tr><td>🏫 Tổng Lớp Học</td><td><strong>${d.tongLopHoc}</strong></td></tr>
+            <tr><td>👨‍🏫 Tổng Giảng Viên</td><td><strong>${d.tongGiangVien}</strong></td></tr>
+            <tr><td>📝 Tổng Lượt Đăng Ký</td><td><strong>${d.tongDangKy}</strong></td></tr>
+            <tr><td>🎯 HV Đang Học (COUNT DISTINCT)</td><td><strong style="color:var(--accent)">${d.hocVienDangHoc}</strong></td></tr>
+            <tr><td>💰 Tổng Doanh Thu (SUM)</td><td><strong style="color:var(--success)">${formatVND(d.tongDoanhThu)}</strong></td></tr>
+        `;
+    }
+
+    loadStats();
+</script>
+</body>
+</html>
