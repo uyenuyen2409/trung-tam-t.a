@@ -19,6 +19,17 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
+// Đăng ký Dependency Injection cho 3-Tier (DAL)
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.ITaiKhoanDAL, QuanLyTrungTam.DAL.Implementations.TaiKhoanDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IHocVienDAL, QuanLyTrungTam.DAL.Implementations.HocVienDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IKhoaHocDAL, QuanLyTrungTam.DAL.Implementations.KhoaHocDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.ILopHocDAL, QuanLyTrungTam.DAL.Implementations.LopHocDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IGiangVienDAL, QuanLyTrungTam.DAL.Implementations.GiangVienDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IPhanCongGiangVienDAL, QuanLyTrungTam.DAL.Implementations.PhanCongGiangVienDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IDangKyHocDAL, QuanLyTrungTam.DAL.Implementations.DangKyHocDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IThanhToanDAL, QuanLyTrungTam.DAL.Implementations.ThanhToanDAL>();
+builder.Services.AddScoped<QuanLyTrungTam.DAL.Interfaces.IThongKeDAL, QuanLyTrungTam.DAL.Implementations.ThongKeDAL>();
+
 var app = builder.Build();
 
 // Tự động tạo database và seed dữ liệu

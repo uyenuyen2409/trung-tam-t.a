@@ -16,37 +16,11 @@
             <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
         </div>
         <div class="page-content">
-            <div class="card" style="margin-bottom:24px">
-                <div class="card-header"><h3>📋 Phân Công Lịch Dạy</h3></div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="txtMaPhanCong">Mã Phân Công</label>
-                            <input type="text" class="form-control-plain" id="txtMaPhanCong" name="txtMaPhanCong" placeholder="VD: PC001">
-                        </div>
-                        <div class="form-group">
-                            <label for="cboGiangVien">Giảng Viên</label>
-                            <select class="form-control-plain" id="cboGiangVien" name="cboGiangVien"></select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="cboLopHoc">Lớp Học</label>
-                            <select class="form-control-plain" id="cboLopHoc" name="cboLopHoc"></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="cboVaiTro">Vai Trò</label>
-                            <select class="form-control-plain" id="cboVaiTro" name="cboVaiTro">
-                                <option value="Giáo viên chính">Giáo viên chính</option>
-                                <option value="Trợ giảng">Trợ giảng</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button class="btn btn-success" id="btnPhanCong" onclick="phanCong()">📋 Phân Công</button>
-                </div>
-            </div>
             <div class="card">
-                <div class="card-header"><h3>📃 Danh Sách Phân Công</h3></div>
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>📃 Danh Sách Phân Công</h3>
+                    <button class="btn btn-primary" id="btnAdd" onclick="showModal()">➕ Phân Công Mới</button>
+                </div>
                 <div class="table-responsive">
                     <table>
                         <thead><tr><th>Mã PC</th><th>Giảng Viên</th><th>Lớp Học</th><th>Vai Trò</th><th>Thao Tác</th></tr></thead>
@@ -59,10 +33,56 @@
         </div>
     </main>
 </div>
+
+<!-- Modal Overlay -->
+<div class="modal" id="modalForm">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Phân Công Lịch Dạy</h3>
+            <button class="btn-icon" onclick="hideModal()">✖</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="txtMaPhanCong">Mã Phân Công</label>
+                    <input type="text" class="form-control-plain" id="txtMaPhanCong" name="txtMaPhanCong" placeholder="VD: PC001">
+                </div>
+                <div class="form-group">
+                    <label for="cboGiangVien">Giảng Viên</label>
+                    <select class="form-control-plain" id="cboGiangVien" name="cboGiangVien"></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="cboLopHoc">Lớp Học</label>
+                    <select class="form-control-plain" id="cboLopHoc" name="cboLopHoc"></select>
+                </div>
+                <div class="form-group">
+                    <label for="cboVaiTro">Vai Trò</label>
+                    <select class="form-control-plain" id="cboVaiTro" name="cboVaiTro">
+                        <option value="Giáo viên chính">Giáo viên chính</option>
+                        <option value="Trợ giảng">Trợ giảng</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal()">Hủy</button>
+            <button class="btn btn-success" id="btnSave" onclick="saveData()">📋 Phân Công</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast-container" id="toastContainer"></div>
 <script src="js/app.js"></script>
 <script>
     checkAuth(); renderSidebar('phancong'); setUserInfo();
+
+    function showModal() { document.getElementById('modalForm').classList.add('active'); }
+    function hideModal() { 
+        document.getElementById('modalForm').classList.remove('active'); 
+        document.getElementById('txtMaPhanCong').value = '';
+    }
 
     async function loadCombos() {
         const [gvRes, lhRes] = await Promise.all([fetch('/api/GiangVien'), fetch('/api/LopHoc')]);
@@ -77,17 +97,17 @@
         const res = await fetch('/api/PhanCongGiangVien');
         const data = await res.json();
         const tbody = document.getElementById('dgvPhanCong');
-        if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có phân công</p></div></td></tr>'; return; }
+        if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Chưa có phân công</div></td></tr>'; return; }
         tbody.innerHTML = data.map(p => `<tr>
             <td><span class="badge badge-info">${p.maPhanCong}</span></td>
-            <td><strong>${p.tenGiangVien}</strong> <small style="color:var(--text-muted)">(${p.maGiangVien})</small></td>
-            <td>${p.tenLopHoc} <small style="color:var(--text-muted)">(${p.maLopHoc})</small></td>
+            <td><strong>${p.tenGiangVien}</strong> <small>(${p.maGiangVien})</small></td>
+            <td>${p.tenLopHoc} <small>(${p.maLopHoc})</small></td>
             <td><span class="badge ${p.vaiTro === 'Giáo viên chính' ? 'badge-success' : 'badge-warning'}">${p.vaiTro}</span></td>
-            <td><button class="btn-icon delete" onclick="deletePC('${p.maPhanCong}')">🗑️</button></td>
+            <td><button class="btn-icon delete" onclick="deleteData('${p.maPhanCong}')">🗑️</button></td>
         </tr>`).join('');
     }
 
-    async function phanCong() {
+    async function saveData() {
         const d = {
             maPhanCong: document.getElementById('txtMaPhanCong').value.trim(),
             maGiangVien: document.getElementById('cboGiangVien').value,
@@ -96,11 +116,11 @@
         };
         if (!d.maPhanCong || !d.maGiangVien || !d.maLopHoc) { showToast('Nhập đầy đủ!', 'error'); return; }
         const res = await fetch('/api/PhanCongGiangVien', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
-        if (res.ok) { showToast('Phân công thành công!', 'success'); document.getElementById('txtMaPhanCong').value = ''; loadData(); }
+        if (res.ok) { showToast('Phân công thành công!', 'success'); hideModal(); loadData(); }
         else { const r = await res.json(); showToast(r.message, 'error'); }
     }
 
-    async function deletePC(id) {
+    async function deleteData(id) {
         if (!confirm('Xóa phân công này?')) return;
         const res = await fetch(`/api/PhanCongGiangVien/${id}`, { method:'DELETE' });
         if (res.ok) { showToast('Xóa thành công!', 'success'); loadData(); }

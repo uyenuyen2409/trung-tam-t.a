@@ -23,9 +23,9 @@ namespace QuanLyTrungTam.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Seed tài khoản mặc định
+            // Seed tài khoản mặc định (Đã băm SHA256)
             modelBuilder.Entity<TaiKhoan>().HasData(
-                new TaiKhoan { TenDangNhap = "admin", MatKhau = "admin123" }
+                new TaiKhoan { TenDangNhap = "admin", MatKhau = QuanLyTrungTam.Helpers.SecurityHelper.HashPassword("admin123") }
             );
 
             // Seed dữ liệu mẫu - Khóa học

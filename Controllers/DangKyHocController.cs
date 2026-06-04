@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using QuanLyTrungTam.Data;
+using QuanLyTrungTam.DAL.Interfaces;
 using QuanLyTrungTam.Models;
 
 namespace QuanLyTrungTam.Controllers
@@ -9,42 +8,28 @@ namespace QuanLyTrungTam.Controllers
     [ApiController]
     public class DangKyHocController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public DangKyHocController(AppDbContext context) { _context = context; }
+        private readonly IDangKyHocDAL _dal;
+        public DangKyHocController(IDangKyHocDAL dal) { _dal = dal; }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _context.DangKyHocs
-                .Include(d => d.HocVien).Include(d => d.KhoaHoc)
-                .Select(d => new {
-                    d.MaDangKy, d.NgayDangKy, d.MaHocVien,
-                    TenHocVien = d.HocVien != null ? d.HocVien.HoTen : "",
-                    d.MaKhoaHoc,
-                    TenKhoaHoc = d.KhoaHoc != null ? d.KhoaHoc.TenKhoaHoc : "",
-                    HocPhi = d.KhoaHoc != null ? d.KhoaHoc.HocPhi : 0
-                }).ToListAsync();
-            return Ok(list);
+            try { return Ok(await _dal.GetAllDetailsAsync()); }
+            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] DangKyHoc dk)
+        public async Task<IActionResult> Create([FromBody] DangKyHoc dangKy)
         {
-            if (await _context.DangKyHocs.AnyAsync(d => d.MaDangKy == dk.MaDangKy))
-                return BadRequest(new { message = "Mã đăng ký đã tồn tại!" });
-            _context.DangKyHocs.Add(dk);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Đăng ký thành công!" });
+            try { await _dal.AddAsync(dangKy); return Ok(new { message = "Đăng ký thành công!" }); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            var dk = await _context.DangKyHocs.FindAsync(id);
-            if (dk == null) return NotFound();
-            _context.DangKyHocs.Remove(dk);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Xóa thành công!" });
+            try { await _dal.DeleteAsync(id); return Ok(new { message = "Hủy thành công!" }); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
     }
 }

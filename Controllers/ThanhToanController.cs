@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using QuanLyTrungTam.Data;
+using QuanLyTrungTam.DAL.Interfaces;
 using QuanLyTrungTam.Models;
 
 namespace QuanLyTrungTam.Controllers
@@ -9,43 +8,28 @@ namespace QuanLyTrungTam.Controllers
     [ApiController]
     public class ThanhToanController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public ThanhToanController(AppDbContext context) { _context = context; }
+        private readonly IThanhToanDAL _dal;
+        public ThanhToanController(IThanhToanDAL dal) { _dal = dal; }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _context.ThanhToans
-                .Include(t => t.DangKyHoc)
-                    .ThenInclude(d => d!.HocVien)
-                .Include(t => t.DangKyHoc)
-                    .ThenInclude(d => d!.KhoaHoc)
-                .Select(t => new {
-                    t.MaHoaDon, t.SoTienThu, t.NgayThanhToan, t.MaDangKy,
-                    TenHocVien = t.DangKyHoc != null && t.DangKyHoc.HocVien != null ? t.DangKyHoc.HocVien.HoTen : "",
-                    TenKhoaHoc = t.DangKyHoc != null && t.DangKyHoc.KhoaHoc != null ? t.DangKyHoc.KhoaHoc.TenKhoaHoc : ""
-                }).ToListAsync();
-            return Ok(list);
+            try { return Ok(await _dal.GetAllDetailsAsync()); }
+            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ThanhToan tt)
+        public async Task<IActionResult> Create([FromBody] ThanhToan thanhToan)
         {
-            if (await _context.ThanhToans.AnyAsync(t => t.MaHoaDon == tt.MaHoaDon))
-                return BadRequest(new { message = "Mã hóa đơn đã tồn tại!" });
-            _context.ThanhToans.Add(tt);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Thanh toán thành công!" });
+            try { await _dal.AddAsync(thanhToan); return Ok(new { message = "Thanh toán thành công!" }); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            var tt = await _context.ThanhToans.FindAsync(id);
-            if (tt == null) return NotFound();
-            _context.ThanhToans.Remove(tt);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Xóa thành công!" });
+            try { await _dal.DeleteAsync(id); return Ok(new { message = "Xóa thành công!" }); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
         }
     }
 }
