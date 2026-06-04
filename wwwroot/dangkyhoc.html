@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Học - English Center</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+        <div class="topbar">
+            <h2>📝 Đăng Ký Học (Quan hệ Nhiều - Nhiều)</h2>
+            <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
+        </div>
+        <div class="page-content">
+            <div class="card" style="margin-bottom:24px">
+                <div class="card-header">
+                    <h3>📋 Ghi Danh Học Viên Vào Khóa Học</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txtMaDangKy">Mã Đăng Ký</label>
+                            <input type="text" class="form-control-plain" id="txtMaDangKy" name="txtMaDangKy" placeholder="VD: DK001">
+                        </div>
+                        <div class="form-group">
+                            <label for="cboHocVien">Học Viên</label>
+                            <select class="form-control-plain" id="cboHocVien" name="cboHocVien"></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cboKhoaHoc">Khóa Học</label>
+                            <select class="form-control-plain" id="cboKhoaHoc" name="cboKhoaHoc"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="txtNgayDangKy">Ngày Đăng Ký</label>
+                            <input type="date" class="form-control-plain" id="txtNgayDangKy" name="txtNgayDangKy">
+                        </div>
+                    </div>
+                    <button class="btn btn-success" id="btnDangKy" onclick="dangKy()">📝 Đăng Ký</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>📃 Danh Sách Đăng Ký (JOIN HocVien + KhoaHoc)</h3></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Mã ĐK</th><th>Học Viên</th><th>Khóa Học</th><th>Học Phí</th><th>Ngày ĐK</th><th>Thao Tác</th></tr></thead>
+                        <tbody id="dgvDangKy">
+                            <tr><td colspan="6"><div class="loading"><div class="spinner"></div> Đang tải...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/app.js"></script>
+<script>
+    checkAuth(); renderSidebar('dangkyhoc'); setUserInfo();
+
+    // Set ngày mặc định = hôm nay
+    document.getElementById('txtNgayDangKy').value = new Date().toISOString().split('T')[0];
+
+    async function loadCombos() {
+        const [hvRes, khRes] = await Promise.all([fetch('/api/HocVien'), fetch('/api/KhoaHoc')]);
+        const [hvData, khData] = await Promise.all([hvRes.json(), khRes.json()]);
+
+        document.getElementById('cboHocVien').innerHTML = '<option value="">-- Chọn Học Viên --</option>' +
+            hvData.map(h => `<option value="${h.maHocVien}">${h.maHocVien} - ${h.hoTen}</option>`).join('');
+
+        document.getElementById('cboKhoaHoc').innerHTML = '<option value="">-- Chọn Khóa Học --</option>' +
+            khData.map(k => `<option value="${k.maKhoaHoc}">${k.maKhoaHoc} - ${k.tenKhoaHoc} (${formatVND(k.hocPhi)})</option>`).join('');
+    }
+
+    async function loadData() {
+        const res = await fetch('/api/DangKyHoc');
+        const data = await res.json();
+        const tbody = document.getElementById('dgvDangKy');
+        if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có đăng ký nào</p></div></td></tr>'; return; }
+        tbody.innerHTML = data.map(d => `<tr>
+            <td><span class="badge badge-info">${d.maDangKy}</span></td>
+            <td><strong>${d.tenHocVien}</strong> <small style="color:var(--text-muted)">(${d.maHocVien})</small></td>
+            <td><span class="badge badge-success">${d.tenKhoaHoc}</span></td>
+            <td>${formatVND(d.hocPhi)}</td>
+            <td>${formatDate(d.ngayDangKy)}</td>
+            <td><button class="btn-icon delete" onclick="deleteDK('${d.maDangKy}')">🗑️</button></td>
+        </tr>`).join('');
+    }
+
+    async function dangKy() {
+        const dk = {
+            maDangKy: document.getElementById('txtMaDangKy').value.trim(),
+            maHocVien: document.getElementById('cboHocVien').value,
+            maKhoaHoc: document.getElementById('cboKhoaHoc').value,
+            ngayDangKy: document.getElementById('txtNgayDangKy').value || new Date().toISOString().split('T')[0]
+        };
+        if (!dk.maDangKy || !dk.maHocVien || !dk.maKhoaHoc) {
+            showToast('Vui lòng nhập đầy đủ thông tin!', 'error'); return;
+        }
+        const res = await fetch('/api/DangKyHoc', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(dk) });
+        if (res.ok) {
+            showToast('Đăng ký thành công!', 'success');
+            document.getElementById('txtMaDangKy').value = '';
+            document.getElementById('cboHocVien').selectedIndex = 0;
+            document.getElementById('cboKhoaHoc').selectedIndex = 0;
+            loadData();
+        } else { const r = await res.json(); showToast(r.message, 'error'); }
+    }
+
+    async function deleteDK(id) {
+        if (!confirm('Hủy đăng ký này?')) return;
+        const res = await fetch(`/api/DangKyHoc/${id}`, { method:'DELETE' });
+        if (res.ok) { showToast('Đã hủy!', 'success'); loadData(); }
+    }
+
+    loadCombos(); loadData();
+</script>
+</body>
+</html>
