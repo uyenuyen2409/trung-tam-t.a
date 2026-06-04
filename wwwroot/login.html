@@ -140,7 +140,7 @@
 <script src="js/app.js"></script>
 <script>
     // Kiểm tra nếu đã login thì đá vào trong
-    if(localStorage.getItem('ec_user')) {
+    if(sessionStorage.getItem('loggedIn') === 'true') {
         window.location.href = 'index.html';
     }
 
@@ -202,7 +202,8 @@
 
             if (res.ok) {
                 showToast(data.message, 'success');
-                localStorage.setItem('ec_user', data.tenDangNhap);
+                sessionStorage.setItem('loggedIn', 'true');
+                sessionStorage.setItem('user', data.tenDangNhap);
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 1000);
