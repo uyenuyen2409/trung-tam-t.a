@@ -24,5 +24,22 @@ namespace QuanLyTrungTam.Controllers
             }
             catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] TaiKhoan registerInfo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(registerInfo.TenDangNhap) || string.IsNullOrWhiteSpace(registerInfo.MatKhau))
+                    return BadRequest(new { message = "Tên đăng nhập và mật khẩu không được để trống!" });
+
+                var hash = SecurityHelper.HashPassword(registerInfo.MatKhau);
+                var tk = new TaiKhoan { TenDangNhap = registerInfo.TenDangNhap, MatKhau = hash };
+                await _dal.RegisterAsync(tk);
+                
+                return Ok(new { message = "Đăng ký thành công!", tenDangNhap = tk.TenDangNhap });
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
     }
 }

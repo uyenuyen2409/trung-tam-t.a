@@ -5,6 +5,7 @@ namespace QuanLyTrungTam.DAL.Interfaces
     public interface ITaiKhoanDAL
     {
         Task<TaiKhoan?> LoginAsync(string tenDangNhap, string matKhauHash);
+        Task<bool> RegisterAsync(TaiKhoan taiKhoan);
     }
 
     public interface IHocVienDAL

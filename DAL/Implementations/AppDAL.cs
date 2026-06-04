@@ -21,6 +21,23 @@ namespace QuanLyTrungTam.DAL.Implementations
             catch (Exception ex) { throw new Exception("Lỗi truy vấn DB: " + ex.Message); }
             finally { await conn.CloseAsync(); }
         }
+
+        public async Task<bool> RegisterAsync(TaiKhoan taiKhoan)
+        {
+            var conn = _context.Database.GetDbConnection();
+            try
+            {
+                if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+                if (await _context.TaiKhoans.AnyAsync(t => t.TenDangNhap == taiKhoan.TenDangNhap))
+                    throw new Exception("Tên đăng nhập đã tồn tại trong hệ thống!");
+                
+                _context.TaiKhoans.Add(taiKhoan);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex) { throw new Exception("Lỗi DB: " + ex.Message); }
+            finally { await conn.CloseAsync(); }
+        }
     }
 
     public class HocVienDAL : IHocVienDAL
