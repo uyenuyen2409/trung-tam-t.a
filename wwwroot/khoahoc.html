@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Khóa Học - English Center</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+        <div class="topbar">
+            <h2>📚 Quản Lý Khóa Học</h2>
+            <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
+        </div>
+        <div class="page-content">
+            <div class="card" style="margin-bottom:24px">
+                <div class="card-header">
+                    <h3>📋 Thông Tin Khóa Học</h3>
+                    <button class="btn btn-outline btn-sm" onclick="resetForm()">🔄 Làm mới</button>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txtMaKhoaHoc">Mã Khóa Học</label>
+                            <input type="text" class="form-control-plain" id="txtMaKhoaHoc" name="txtMaKhoaHoc" placeholder="VD: KH004">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtTenKhoaHoc">Tên Khóa Học</label>
+                            <input type="text" class="form-control-plain" id="txtTenKhoaHoc" name="txtTenKhoaHoc" placeholder="Tiếng Anh Giao Tiếp...">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txtHocPhi">Học Phí (VNĐ)</label>
+                            <input type="number" class="form-control-plain" id="txtHocPhi" name="txtHocPhi" placeholder="5000000">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtSoBuoiHoc">Số Buổi Học</label>
+                            <input type="number" class="form-control-plain" id="txtSoBuoiHoc" name="txtSoBuoiHoc" placeholder="30">
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:8px">
+                        <button class="btn btn-success" id="btnThem" onclick="themKH()">➕ Thêm Mới</button>
+                        <button class="btn btn-info" id="btnSua" onclick="suaKH()" style="display:none">💾 Cập Nhật</button>
+                        <button class="btn btn-outline" id="btnHuy" onclick="resetForm()" style="display:none">❌ Hủy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>📃 Danh Sách Khóa Học</h3></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Mã KH</th><th>Tên Khóa Học</th><th>Học Phí</th><th>Số Buổi</th><th>Thao Tác</th></tr></thead>
+                        <tbody id="dgvKhoaHoc">
+                            <tr><td colspan="5"><div class="loading"><div class="spinner"></div> Đang tải...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/app.js"></script>
+<script>
+    checkAuth(); renderSidebar('khoahoc'); setUserInfo();
+
+    async function loadData() {
+        try {
+            const res = await fetch('/api/KhoaHoc');
+            const data = await res.json();
+            const tbody = document.getElementById('dgvKhoaHoc');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có khóa học nào</p></div></td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(kh => `<tr>
+                <td><span class="badge badge-info">${kh.maKhoaHoc}</span></td>
+                <td><strong>${kh.tenKhoaHoc}</strong></td>
+                <td>${formatVND(kh.hocPhi)}</td>
+                <td>${kh.soBuoiHoc} buổi</td>
+                <td><div class="action-btns">
+                    <button class="btn-icon edit" onclick="editKH('${kh.maKhoaHoc}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deleteKH('${kh.maKhoaHoc}')">🗑️</button>
+                </div></td>
+            </tr>`).join('');
+        } catch(e) { showToast('Lỗi tải dữ liệu!', 'error'); }
+    }
+
+    async function themKH() {
+        const kh = getFormData();
+        if (!kh.maKhoaHoc || !kh.tenKhoaHoc) { showToast('Vui lòng nhập Mã và Tên khóa học!', 'error'); return; }
+        try {
+            const res = await fetch('/api/KhoaHoc', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(kh) });
+            const d = await res.json();
+            if (res.ok) { showToast('Thêm khóa học thành công!', 'success'); resetForm(); loadData(); }
+            else { showToast(d.message, 'error'); }
+        } catch(e) { showToast('Lỗi!', 'error'); }
+    }
+
+    async function editKH(id) {
+        const res = await fetch(`/api/KhoaHoc/${id}`);
+        const kh = await res.json();
+        document.getElementById('txtMaKhoaHoc').value = kh.maKhoaHoc;
+        document.getElementById('txtMaKhoaHoc').readOnly = true;
+        document.getElementById('txtTenKhoaHoc').value = kh.tenKhoaHoc;
+        document.getElementById('txtHocPhi').value = kh.hocPhi;
+        document.getElementById('txtSoBuoiHoc').value = kh.soBuoiHoc;
+        document.getElementById('btnThem').style.display = 'none';
+        document.getElementById('btnSua').style.display = '';
+        document.getElementById('btnHuy').style.display = '';
+    }
+
+    async function suaKH() {
+        const kh = getFormData();
+        const res = await fetch(`/api/KhoaHoc/${kh.maKhoaHoc}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(kh) });
+        if (res.ok) { showToast('Cập nhật thành công!', 'success'); resetForm(); loadData(); }
+        else { showToast('Lỗi cập nhật!', 'error'); }
+    }
+
+    async function deleteKH(id) {
+        if (!confirm('Xóa khóa học này?')) return;
+        const res = await fetch(`/api/KhoaHoc/${id}`, { method:'DELETE' });
+        if (res.ok) { showToast('Xóa thành công!', 'success'); loadData(); }
+        else { showToast('Lỗi khi xóa!', 'error'); }
+    }
+
+    function getFormData() {
+        return {
+            maKhoaHoc: document.getElementById('txtMaKhoaHoc').value.trim(),
+            tenKhoaHoc: document.getElementById('txtTenKhoaHoc').value.trim(),
+            hocPhi: parseFloat(document.getElementById('txtHocPhi').value) || 0,
+            soBuoiHoc: parseInt(document.getElementById('txtSoBuoiHoc').value) || 0
+        };
+    }
+
+    function resetForm() {
+        document.getElementById('txtMaKhoaHoc').value = '';
+        document.getElementById('txtMaKhoaHoc').readOnly = false;
+        document.getElementById('txtTenKhoaHoc').value = '';
+        document.getElementById('txtHocPhi').value = '';
+        document.getElementById('txtSoBuoiHoc').value = '';
+        document.getElementById('btnThem').style.display = '';
+        document.getElementById('btnSua').style.display = 'none';
+        document.getElementById('btnHuy').style.display = 'none';
+    }
+
+    loadData();
+</script>
+</body>
+</html>
