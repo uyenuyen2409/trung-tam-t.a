@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học Viên - English Center</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content">
+        <div class="topbar">
+            <h2>👨‍🎓 Quản Lý Học Viên</h2>
+            <div class="user-info"><span id="lblUser"></span><div class="user-avatar">A</div></div>
+        </div>
+        <div class="page-content">
+            <div class="card">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; gap:12px;">
+                        <input type="text" id="txtSearch" class="form-control-plain" placeholder="Tìm mã, tên, SĐT..." style="width:250px;">
+                        <button class="btn btn-info" id="btnSearch" onclick="searchData()">🔍 Tìm kiếm</button>
+                    </div>
+                    <button class="btn btn-primary" id="btnAdd" onclick="showModal()">➕ Thêm Học Viên</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Mã HV</th><th>Họ Tên</th><th>Ngày Sinh</th><th>Giới Tính</th><th>SĐT</th><th>Email</th><th>Thao Tác</th></tr></thead>
+                        <tbody id="dgvHocVien">
+                            <tr><td colspan="7"><div class="loading"><div class="spinner"></div> Đang tải...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal Overlay -->
+<div class="modal" id="modalForm">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Thêm Học Viên</h3>
+            <button class="btn-icon" onclick="hideModal()">✖</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="txtMaHocVien">Mã Học Viên</label>
+                    <input type="text" class="form-control-plain" id="txtMaHocVien" name="txtMaHocVien">
+                </div>
+                <div class="form-group">
+                    <label for="txtHoTen">Họ Tên</label>
+                    <input type="text" class="form-control-plain" id="txtHoTen" name="txtHoTen">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dtpNgaySinh">Ngày Sinh</label>
+                    <input type="date" class="form-control-plain" id="dtpNgaySinh" name="dtpNgaySinh">
+                </div>
+                <div class="form-group">
+                    <label for="cboGioiTinh">Giới Tính</label>
+                    <select class="form-control-plain" id="cboGioiTinh" name="cboGioiTinh">
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="txtSoDienThoai">Số Điện Thoại</label>
+                    <input type="text" class="form-control-plain" id="txtSoDienThoai" name="txtSoDienThoai">
+                </div>
+                <div class="form-group">
+                    <label for="txtEmail">Email</label>
+                    <input type="email" class="form-control-plain" id="txtEmail" name="txtEmail">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal()">Hủy</button>
+            <button class="btn btn-success" id="btnSave" onclick="saveData()">💾 Lưu</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/app.js"></script>
+<script>
+    checkAuth(); renderSidebar('hocvien'); setUserInfo();
+    let isEdit = false;
+
+    async function loadData(keyword = '') {
+        const url = keyword ? `/api/HocVien/search?keyword=${keyword}` : '/api/HocVien';
+        const res = await fetch(url);
+        const data = await res.json();
+        const tbody = document.getElementById('dgvHocVien');
+        if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Không có dữ liệu</div></td></tr>'; return; }
+        tbody.innerHTML = data.map(h => `<tr>
+            <td><span class="badge badge-info">${h.maHocVien}</span></td>
+            <td><strong>${h.hoTen}</strong></td>
+            <td>${formatDate(h.ngaySinh)}</td>
+            <td>${h.gioiTinh}</td>
+            <td>${h.soDienThoai}</td>
+            <td>${h.email}</td>
+            <td>
+                <button class="btn-icon edit" onclick="editData('${h.maHocVien}')">✏️</button>
+                <button class="btn-icon delete" onclick="deleteData('${h.maHocVien}')">🗑️</button>
+            </td>
+        </tr>`).join('');
+    }
+
+    function searchData() { loadData(document.getElementById('txtSearch').value); }
+
+    function showModal() {
+        document.getElementById('modalForm').classList.add('active');
+    }
+    function hideModal() {
+        document.getElementById('modalForm').classList.remove('active');
+        clearForm();
+    }
+    function clearForm() {
+        isEdit = false;
+        document.getElementById('txtMaHocVien').value = '';
+        document.getElementById('txtMaHocVien').disabled = false;
+        document.getElementById('txtHoTen').value = '';
+        document.getElementById('dtpNgaySinh').value = '';
+        document.getElementById('txtSoDienThoai').value = '';
+        document.getElementById('txtEmail').value = '';
+        document.getElementById('modalTitle').innerText = "Thêm Học Viên";
+    }
+
+    async function saveData() {
+        const h = {
+            maHocVien: document.getElementById('txtMaHocVien').value.trim(),
+            hoTen: document.getElementById('txtHoTen').value.trim(),
+            ngaySinh: document.getElementById('dtpNgaySinh').value,
+            gioiTinh: document.getElementById('cboGioiTinh').value,
+            soDienThoai: document.getElementById('txtSoDienThoai').value.trim(),
+            email: document.getElementById('txtEmail').value.trim()
+        };
+        if (!h.maHocVien || !h.hoTen) { showToast('Vui lòng nhập Mã và Tên!', 'error'); return; }
+
+        const url = isEdit ? `/api/HocVien/${h.maHocVien}` : '/api/HocVien';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(h) });
+        if (res.ok) { showToast('Lưu thành công!', 'success'); hideModal(); loadData(); }
+        else { const r = await res.json(); showToast(r.message, 'error'); }
+    }
+
+    async function editData(id) {
+        const res = await fetch(`/api/HocVien/${id}`);
+        const h = await res.json();
+        isEdit = true;
+        document.getElementById('modalTitle').innerText = "Sửa Học Viên";
+        document.getElementById('txtMaHocVien').value = h.maHocVien;
+        document.getElementById('txtMaHocVien').disabled = true;
+        document.getElementById('txtHoTen').value = h.hoTen;
+        document.getElementById('dtpNgaySinh').value = h.ngaySinh ? h.ngaySinh.split('T')[0] : '';
+        document.getElementById('cboGioiTinh').value = h.gioiTinh;
+        document.getElementById('txtSoDienThoai').value = h.soDienThoai;
+        document.getElementById('txtEmail').value = h.email;
+        showModal();
+    }
+
+    async function deleteData(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa?')) return;
+        const res = await fetch(`/api/HocVien/${id}`, { method:'DELETE' });
+        if (res.ok) { showToast('Xóa thành công!', 'success'); loadData(); }
+        else { const r = await res.json(); showToast(r.message, 'error'); }
+    }
+
+    loadData();
+</script>
+</body>
+</html>
