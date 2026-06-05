@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace QuanLyTrungTam.Models
 {
     /// <summary>
-    /// Bảng Giảng Viên - Lưu thông tin giảng viên
+    /// Bảng Giảng Viên-Lưu thông tin giảng viên
     /// </summary>
     public class GiangVien
     {

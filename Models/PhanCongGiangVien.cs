@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace QuanLyTrungTam.Models
 {
     /// <summary>
-    /// Bảng Phân Công Giảng Viên - Bảng trung gian giữa GiangVien và LopHoc (Nhiều-Nhiều)
+    /// Bảng Phân Công Giảng Viên-Bảng trung gian giữa GiangVien và LopHoc (Nhiều-Nhiều)
     /// </summary>
     public class PhanCongGiangVien
     {

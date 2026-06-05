@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using QuanLyTrungTam.DAL.Interfaces;
 using QuanLyTrungTam.Models;
 
-namespace QuanLyTrungTam.Controllers
+namespace QuanLyTrungTam.Controllers     
 {
     [Route("api/[controller]")]
     [ApiController]

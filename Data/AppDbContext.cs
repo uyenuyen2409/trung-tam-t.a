@@ -4,7 +4,7 @@ using QuanLyTrungTam.Models;
 namespace QuanLyTrungTam.Data
 {
     /// <summary>
-    /// Database Context - Quản lý kết nối và ánh xạ các bảng SQLite
+    /// Database Context-Quản lý kết nối và ánh xạ các bảng SQLite
     /// </summary>
     public class AppDbContext : DbContext
     {

@@ -6,7 +6,7 @@ namespace QuanLyTrungTam.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GiangVienController : ControllerBase
+    public class GiangVienController : ControllerBase   
     {
         private readonly IGiangVienDAL _dal;
         public GiangVienController(IGiangVienDAL dal) { _dal = dal; }
